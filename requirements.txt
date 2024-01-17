@@ -1,3 +1,5 @@
 streamlit
+openpyxl
+matplotlib
 ploty
 boto3
