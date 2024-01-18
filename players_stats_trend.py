@@ -8,24 +8,28 @@ import boto3
 from boto3.dynamodb.conditions import Key, Attr
 
 
+#@st.cache
 
 def conectar_AWS(Access_WS):
     Access_key = Access_WS['Access_key']
     Secret_Access_key = Access_WS['Secret_Access_key']
-    dynamodb = boto3.resource('dynamodb',aws_access_key_id=Access_key, aws_secret_access_key=Secret_Access_key, region_name='eu-north-1')
+    region_name = Access_WS['region_name']
+    dynamodb = boto3.resource('dynamodb',aws_access_key_id=Access_key, aws_secret_access_key=Secret_Access_key, region_name=region_name)
     return(dynamodb)
 
 def conectar_AWS_client(Access_WS):
     Access_key = Access_WS['Access_key']
     Secret_Access_key = Access_WS['Secret_Access_key']
-    dynamodb = boto3.client('dynamodb',aws_access_key_id=Access_key, aws_secret_access_key=Secret_Access_key, region_name='eu-north-1')
+    region_name = Access_WS['region_name']
+    dynamodb = boto3.client('dynamodb',aws_access_key_id=Access_key, aws_secret_access_key=Secret_Access_key, region_name=region_name)
     return(dynamodb)
 
 
-AWS_keys = pd.read_csv('in/read_only_streamlit_accessKeys.csv')
-Access_key = AWS_keys['Access key ID'][0]
-Secret_Access_key = AWS_keys['Secret access key'][0]
-Access_WS = {'Access_key': Access_key, 'Secret_Access_key': Secret_Access_key}
+#AWS_keys = pd.read_csv('in/read_only_streamlit_accessKeys.csv')
+Access_key = st.secrets["AWS_ACCESS_KEY_ID"] #AWS_keys['Access key ID'][0]
+Secret_Access_key = st.secrets["AWS_SECRET_ACCESS_KEY"] #AWS_keys['Secret access key'][0]
+region_name = st.secrets["AWS_DEFAULT_REGION"]
+Access_WS = {'Access_key': Access_key, 'Secret_Access_key': Secret_Access_key, 'region_name': region_name}
 
 dynamoDB = conectar_AWS(Access_WS)
 
@@ -85,6 +89,8 @@ def buscarEstadisticas(dynamoDB, player, stat):
         df_out = df_out[df_out['period']==0]
         df_out = df_out[['start_date', stat, 'rival_team_name']].sort_values(by='start_date', ascending=True)
         df_out[stat] = df_out[stat].astype(float)
+        if stat == 'time_played':
+            df_out[stat] = df_out[stat]/60 #df_out.stat.apply(lambda x:x/60)
     except:
         list_keys_out = []
         df_out = pd.DataFrame(list_keys_out)
@@ -103,11 +109,13 @@ with colSide2:
     st.markdown(htmlTittleSide, unsafe_allow_html=True)
 
 
-lista_estadisticas = ['Puntos', 'Rebotes', 'Asistencias']
-dict_estadisticas = {'Puntos': 'points', 'Rebotes': 'total_rebound', 'Asistencias': 'assists'}
+lista_estadisticas = ['Puntos', 'Rebotes', 'Asistencias', 'Minutos', 'Valoración', '+-', 'Recuperaciones', 'Pérdidas', 'Tapones a Favor', 'Tapones en Contra', 'Rebotes Defensivos', 'Rebotes Ofensivos', 'Faltas Cometidas', 'Faltas Recibidas', 'Puntos al Contrataque', 'Puntos en la Zona', 'Puntos en 2º Oportunidad', 'Puntos tras Asistencia', 'Puntos tras Robo', 'Mates', 'Tiros de 2 puntos Anotados', 'Tiros de 2 puntos Intentados', '% Tiros de 2 puntos', 'Triples Anotados', 'Triples Intentados', '% Triples', 'Tiros Libres Anotados', 'Tiros Libres Intentados', '% Tiros Libres', 'Titular', 'Finaliza partido en campo']
+
+dict_estadisticas = {'Puntos': 'points', 'Rebotes': 'total_rebound', 'Asistencias': 'assists', 'Minutos': 'time_played', 'Valoración': 'val', '+-': 'differencePlayer', 'Recuperaciones': 'steals', 'Pérdidas': 'turnovers', 'Tapones a Favor': 'blocks', 'Tapones en Contra': 'received_blocks', 'Rebotes Defensivos': 'deffensive_rebound', 'Rebotes Ofensivos': 'offensive_rebound', 'Faltas Cometidas': 'personal_fouls', 'Faltas Recibidas': 'received_fouls', 'Puntos al Contrataque': 'points_fast_break', 'Puntos en la Zona': 'points_in_the_paint', 'Puntos en 2º Oportunidad': 'points_second_chance', 'Puntos tras Asistencia': 'points_afterassist', 'Puntos tras Robo': 'points_aftersteal', 'Mates': 'dunks', 'Tiros de 2 puntos Anotados': 'pt2_success', 'Tiros de 2 puntos Intentados': 'pt2_tried', '% Tiros de 2 puntos': 'pt2_percentage', 'Triples Anotados': 'pt3_success', 'Triples Intentados': 'pt3_tried', '% Triples': 'pt3_percentage', 'Tiros Libres Anotados': 'pt1_success', 'Tiros Libres Intentados': 'pt1_tried', '% Tiros Libres': 'pt3_percentage', 'Titular': 'starting', 'Finaliza partido en campo': 'finishing'}
 
 st.sidebar.header('Estadística')
 selected_stat= st.sidebar.selectbox('',lista_estadisticas)
+#selected_stat = 'Minutos'
 stat = dict_estadisticas[selected_stat]
 
 
@@ -150,23 +158,23 @@ with col2:
    st.markdown(html, unsafe_allow_html=True)
    selected_year1 = st.selectbox('Año 1', list_years_disponiblesName)
    selected_year1_id = list(obj_editions.keys())[list(obj_editions.values()).index(selected_year1)]
-   key_competition_1 = str(selected_liga1_id) + '_' + str(selected_year1_id) + '_107'
+   key_competition_1 = str(selected_liga1_id) + '_' + str(selected_year1_id)
    st.markdown(html, unsafe_allow_html=True)
    selected_year2 = st.selectbox('Año 2', list_years_disponiblesName)
    selected_year2_id = list(obj_editions.keys())[list(obj_editions.values()).index(selected_year2)]
-   key_competition_2 = str(selected_liga2_id) + '_' + str(selected_year2_id) + '_107'
+   key_competition_2 = str(selected_liga2_id) + '_' + str(selected_year2_id)
    st.markdown(html, unsafe_allow_html=True)
    if check_player3:
        st.markdown(html_small, unsafe_allow_html=True)
        selected_year3 = st.selectbox('Año 3', list_years_disponiblesName)
        selected_year3_id = list(obj_editions.keys())[list(obj_editions.values()).index(selected_year3)]
-       key_competition_3 = str(selected_liga3_id) + '_' + str(selected_year3_id) + '_107'
+       key_competition_3 = str(selected_liga3_id) + '_' + str(selected_year3_id)
    st.markdown(html, unsafe_allow_html=True)
    if check_player4:
        st.markdown(html_small, unsafe_allow_html=True)
        selected_year4 = st.selectbox('Año 4', list_years_disponiblesName)
        selected_year4_id = list(obj_editions.keys())[list(obj_editions.values()).index(selected_year4)]
-       key_competition_4 = str(selected_liga4_id) + '_' + str(selected_year4_id) + '_107'
+       key_competition_4 = str(selected_liga4_id) + '_' + str(selected_year4_id)
 
 with col3:
     st.markdown(html, unsafe_allow_html=True)
