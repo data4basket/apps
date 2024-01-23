@@ -87,7 +87,7 @@ def buscarEstadisticas(dynamoDB, player, stat):
         list_keys_out = response['Items']      
         df_out = pd.DataFrame(list_keys_out)
         df_out = df_out[df_out['period']==0]
-        df_out['start_date'] = pd.to_datetime(df_out['start_date'])
+        df_out['start_date'] = pd.to_datetime(df_out['start_date'], format='%d-%m-%Y - %H:%M')
         df_out = df_out[['start_date', stat, 'rival_team_name']].sort_values(by='start_date', ascending=True)
         df_out[stat] = df_out[stat].astype(float)
         if stat == 'time_played':
