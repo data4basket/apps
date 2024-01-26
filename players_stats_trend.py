@@ -8,8 +8,6 @@ import boto3
 from boto3.dynamodb.conditions import Key, Attr
 
 
-#@st.cache
-
 def conectar_AWS(Access_WS):
     Access_key = Access_WS['Access_key']
     Secret_Access_key = Access_WS['Secret_Access_key']
@@ -25,7 +23,6 @@ def conectar_AWS_client(Access_WS):
     return(dynamodb)
 
 
-#AWS_keys = pd.read_csv('in/read_only_streamlit_accessKeys.csv')
 Access_key = st.secrets["AWS_ACCESS_KEY_ID"] #AWS_keys['Access key ID'][0]
 Secret_Access_key = st.secrets["AWS_SECRET_ACCESS_KEY"] #AWS_keys['Secret access key'][0]
 region_name = st.secrets["AWS_DEFAULT_REGION"]
@@ -45,7 +42,8 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-def buscarCompeticiones(dynamoDB):
+@st.cache
+def buscarCompeticiones(_dynamoDB):
     table = dynamoDB.Table('competition')
     obj_competitions = {}
     obj_editions = {}
@@ -59,8 +57,9 @@ def buscarCompeticiones(dynamoDB):
     except:
         True
     return [obj_competitions, obj_editions]
-
-def buscarJugadores(dynamoDB, selected_liga_id):
+    
+@st.cache
+def buscarJugadores(_dynamoDB, selected_liga_id):
     table = dynamoDB.Table('p_players')
     try:
         response = table.query(
@@ -75,8 +74,9 @@ def buscarJugadores(dynamoDB, selected_liga_id):
         list_keys_out = []
         df_out = pd.DataFrame(list_keys_out)
     return df_out
-
-def buscarEstadisticas(dynamoDB, player, stat):
+    
+@st.cache
+def buscarEstadisticas(_dynamoDB, player, stat):
     table = dynamoDB.Table('j_playerstats')
     try:
         response = table.query(
