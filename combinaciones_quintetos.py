@@ -524,30 +524,38 @@ if selected_team1 == selected_team2:
                            }
         
     DF_teamEvoluting_1 = pd.DataFrame(obj_team1).transpose()
-    DF_teamEvoluting_1['start_date'] = pd.to_datetime(DF_teamEvoluting_1['DATE'], format='%Y-%m-%d')
+    DF_teamEvoluting_1['start_date'] = pd.to_datetime(DF_teamEvoluting_1['DATE'], format='%d-%m-%Y')
     DF_teamEvoluting_1 = DF_teamEvoluting_1.sort_values(by='start_date', ascending=True)
+    DF_teamEvoluting_1['start_date_inversed'] = pd.to_datetime(DF_teamEvoluting_1['DATE'], format='%Y-%m-%d')
     DF_teamEvoluting_2 = pd.DataFrame(obj_team2).transpose()
-    DF_teamEvoluting_2['start_date'] = pd.to_datetime(DF_teamEvoluting_2['DATE'], format='%Y-%m-%d')
+    DF_teamEvoluting_2['start_date'] = pd.to_datetime(DF_teamEvoluting_2['DATE'], format='%d-%m-%Y')
     DF_teamEvoluting_2 = DF_teamEvoluting_2.sort_values(by='start_date', ascending=True)
+    DF_teamEvoluting_2['start_date_inversed'] = pd.to_datetime(DF_teamEvoluting_2['DATE'], format='%Y-%m-%d')
     list_game_dates = list(set(DF_teamEvoluting_1['DATE'].to_list()+DF_teamEvoluting_2['DATE'].to_list()))
     list_resultsTeams = []
     list_stat_a_visualizar = ['NET RATING', 'OFF RATING', 'DEF RATING', 'MINS', 'POS',]
     selected_stat_a_visualizar = st.selectbox('Estadística a visualizar: ', list_stat_a_visualizar)
     for date in list_game_dates:
+        date_inversed1 = 0    
         DF_teamEvoluting_1alone = DF_teamEvoluting_1[DF_teamEvoluting_1['DATE'] == date].reset_index()
         if DF_teamEvoluting_1alone.shape[0] > 0:
             value_team1 = round(DF_teamEvoluting_1alone[selected_stat_a_visualizar][0], 1)
+            date_inversed1 = DF_teamEvoluting_1alone['start_date_inversed'][0]
         else:
             value_team1 = 0
-        list_resultsTeams.append([date, value_team1, name_quinteto1])
 
         DF_teamEvoluting_2alone = DF_teamEvoluting_2[DF_teamEvoluting_2['DATE'] == date].reset_index()
         if DF_teamEvoluting_2alone.shape[0] > 0:
             value_team2 = round(DF_teamEvoluting_2alone[selected_stat_a_visualizar][0], 1)
+            if date_inversed1 != 0:
+                date_inversed = date_inversed1
+            else:
+                date_inversed = DF_teamEvoluting_2alone['start_date_inversed'][0]
         else:
             value_team2 = 0
-        list_resultsTeams.append([date, value_team2, name_quinteto2])
-    DF_teamEvoluting = pd.DataFrame(list_resultsTeams, columns = ['PARTIDOS', selected_stat_a_visualizar, 'Quintetos']).sort_values(by='PARTIDOS',ascending=True)
+        list_resultsTeams.append([date, value_team1, name_quinteto1, date_inversed])
+        list_resultsTeams.append([date, value_team2, name_quinteto2, date_inversed])
+    DF_teamEvoluting = pd.DataFrame(list_resultsTeams, columns = ['PARTIDOS', selected_stat_a_visualizar, 'Quintetos', 'date_inversed']).sort_values(by='PARTIDOS',ascending=True)
 
     fig = px.line(DF_teamEvoluting, x="PARTIDOS", y=selected_stat_a_visualizar, color='Quintetos', text=selected_stat_a_visualizar)
     fig.update_traces(textposition="bottom right")
