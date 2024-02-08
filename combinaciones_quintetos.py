@@ -547,7 +547,7 @@ if selected_team1 == selected_team2:
         else:
             value_team2 = 0
         list_resultsTeams.append([date, value_team2, name_quinteto2])
-    DF_teamEvoluting = pd.DataFrame(list_resultsTeams, columns = ['PARTIDOS', selected_stat_a_visualizar, 'Quintetos']) 
+    DF_teamEvoluting = pd.DataFrame(list_resultsTeams, columns = ['PARTIDOS', selected_stat_a_visualizar, 'Quintetos']).sort_values(by='PARTIDOS',ascending=True)
 
     fig = px.line(DF_teamEvoluting, x="PARTIDOS", y=selected_stat_a_visualizar, color='Quintetos', text=selected_stat_a_visualizar)
     fig.update_traces(textposition="bottom right")
