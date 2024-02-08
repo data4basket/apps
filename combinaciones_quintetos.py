@@ -423,19 +423,21 @@ for idx, value in enumerate(ranges):
 
 fig = go.Figure()
 
-
+name_quinteto1 ='Quinteto 1. IN:' + TextPlayersIn_team1 + '.  OUT: ' + TextPlayersOut_team1
 fig.add_trace(go.Scatterpolar(
       r=all_averages_team1,
       theta=categories,
       fill='toself',
-      name='Quinteto 1. IN:' + TextPlayersIn_team1 + '.  OUT: ' + TextPlayersOut_team1,
+      name=name_quinteto1,
       marker_color = 'blue'
 ))
+
+name_quinteto2 ='Quinteto 2. IN:' + TextPlayersIn_team2 + '.  OUT: ' + TextPlayersOut_team2
 fig.add_trace(go.Scatterpolar(
       r=all_averages_team2,
       theta=categories,
       fill='toself',
-      name='Quinteto 2. IN:' + TextPlayersIn_team2 + '.  OUT: ' + TextPlayersOut_team2,
+      name=name_quinteto2,
       marker_color = 'orange'
 ))
 fig.update_polars(radialaxis=dict(visible=False,range=[0, 1]))
@@ -537,14 +539,14 @@ if selected_team1 == selected_team2:
             value_team1 = round(DF_teamEvoluting_1alone[selected_stat_a_visualizar][0], 1)
         else:
             value_team1 = 0
-        list_resultsTeams.append([date, value_team1, 'Quinteto 1'])
+        list_resultsTeams.append([date, value_team1, name_quinteto1])
 
         DF_teamEvoluting_2alone = DF_teamEvoluting_2[DF_teamEvoluting_2['DATE'] == date].reset_index()
         if DF_teamEvoluting_2alone.shape[0] > 0:
             value_team2 = round(DF_teamEvoluting_2alone[selected_stat_a_visualizar][0], 1)
         else:
             value_team2 = 0
-        list_resultsTeams.append([date, value_team2, 'Quinteto 2'])
+        list_resultsTeams.append([date, value_team2, name_quinteto2])
     DF_teamEvoluting = pd.DataFrame(list_resultsTeams, columns = ['PARTIDOS', selected_stat_a_visualizar, 'Quinteto']) 
 
     fig = px.line(DF_teamEvoluting, x="PARTIDOS", y=selected_stat_a_visualizar, color='Quinteto', text=selected_stat_a_visualizar)
