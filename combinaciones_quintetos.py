@@ -551,4 +551,5 @@ if selected_team1 == selected_team2:
 
     fig = px.line(DF_teamEvoluting, x="PARTIDOS", y=selected_stat_a_visualizar, color='Quinteto', text=selected_stat_a_visualizar)
     fig.update_traces(textposition="bottom right")
+    fig.update_layout(legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1))
     st.plotly_chart(fig, use_container_width=True)
