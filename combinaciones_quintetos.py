@@ -118,7 +118,7 @@ with colSide2:
 [obj_competitions, obj_editions] = buscarCompeticiones(dynamoDB)
 list_ligas_disponiblesName = list(set(list(obj_competitions[key] for key in obj_competitions)))
 list_years_disponiblesName = sorted(list(set(list(obj_editions[key] for key in obj_editions))), reverse=True)
-
+list_years_disponiblesName = ['2023-24'] # Hardcodeado porque solo datos de quintetos de este año 
 
 # Quinteto 1
 st.sidebar.title('Quinteto 1:')
@@ -386,6 +386,9 @@ for idx, value in enumerate(ranges):
             all_averages_team1[idx] = all_averages_team1[idx]/ranges[idx]
             all_averages_team2[idx] = (all_averages_team2[idx] - (ranges[idx]-(all_averages_team2[idx] - 15)))/ranges[idx]
             #print('A1: ', all_averages_team1[idx], ' - ', all_averages_team2[idx])
+        elif all_averages_team1[idx] == all_averages_team2[idx]:
+            all_averages_team1[idx] = all_averages_team1[idx]/ranges[idx]
+            all_averages_team2[idx] = all_averages_team2[idx]/ranges[idx]
         else:
             all_averages_team1[idx] = (all_averages_team1[idx] - (ranges[idx]-(all_averages_team1[idx] - 15)))/ranges[idx]
             all_averages_team2[idx] = all_averages_team2[idx]/ranges[idx]
@@ -395,6 +398,9 @@ for idx, value in enumerate(ranges):
             all_averages_team1[idx] = all_averages_team1[idx]/ranges[idx]
             all_averages_team2[idx] = (all_averages_team2[idx] - (ranges[idx]-(all_averages_team2[idx] + 15)))/ranges[idx]
             #print('B1: ', all_averages_team1[idx], ' - ', all_averages_team2[idx])
+        elif all_averages_team1[idx] == all_averages_team2[idx]:
+            all_averages_team1[idx] = all_averages_team1[idx]/ranges[idx]
+            all_averages_team2[idx] = all_averages_team2[idx]/ranges[idx]
         else:
             all_averages_team1[idx] = (all_averages_team1[idx] - (ranges[idx]-(all_averages_team1[idx] + 15)))/ranges[idx]
             all_averages_team2[idx] = all_averages_team2[idx]/ranges[idx]
@@ -404,6 +410,9 @@ for idx, value in enumerate(ranges):
             all_averages_team1[idx] = all_averages_team1[idx]/ranges[idx]
             all_averages_team2[idx] = (all_averages_team2[idx] - (ranges[idx]-(all_averages_team2[idx] - 15)))/ranges[idx]
             #print('C1: ', all_averages_team1[idx], ' - ', all_averages_team2[idx])
+        elif all_averages_team1[idx] == all_averages_team2[idx]:
+            all_averages_team1[idx] = all_averages_team1[idx]/ranges[idx]
+            all_averages_team2[idx] = all_averages_team2[idx]/ranges[idx]
         else:
             all_averages_team1[idx] = (all_averages_team1[idx] - (ranges[idx]-(all_averages_team1[idx] - 15)))/ranges[idx]
             all_averages_team2[idx] = all_averages_team2[idx]/ranges[idx]
