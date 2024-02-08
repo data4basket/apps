@@ -547,9 +547,9 @@ if selected_team1 == selected_team2:
         else:
             value_team2 = 0
         list_resultsTeams.append([date, value_team2, name_quinteto2])
-    DF_teamEvoluting = pd.DataFrame(list_resultsTeams, columns = ['PARTIDOS', selected_stat_a_visualizar, 'Quinteto']) 
+    DF_teamEvoluting = pd.DataFrame(list_resultsTeams, columns = ['PARTIDOS', selected_stat_a_visualizar, 'Quintetos']) 
 
-    fig = px.line(DF_teamEvoluting, x="PARTIDOS", y=selected_stat_a_visualizar, color='Quinteto', text=selected_stat_a_visualizar)
+    fig = px.line(DF_teamEvoluting, x="PARTIDOS", y=selected_stat_a_visualizar, color='Quintetos', text=selected_stat_a_visualizar)
     fig.update_traces(textposition="bottom right")
     fig.update_layout(legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1))
     st.plotly_chart(fig, use_container_width=True)
