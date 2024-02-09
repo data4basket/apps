@@ -172,7 +172,7 @@ else:
 TextPlayersOut_team1 = " - ".join(str(element) for element in selected_team1_players_out)
 
 GAMES_PLAYED_TEAM1 = len(pd.unique(df_statFives_team1['id_match']))
-MINUTES_PLAYED_TEAM1 = round((df_statFives_team1['second_gameOut'].sum() - df_statFives_team1['second_gameIn'].sum()) / 60, 0)
+MINUTES_PLAYED_TEAM1 = (df_statFives_team1['second_gameOut'].sum() - df_statFives_team1['second_gameIn'].sum()) / 60
 T2IN_TEAM1 = df_statFives_team1[df_statFives_team1['id_playbyplaytype'] == 't2in'].shape[0]
 T2OUT_TEAM1 = df_statFives_team1[df_statFives_team1['id_playbyplaytype'] == 't2out'].shape[0]
 T3IN_TEAM1 = df_statFives_team1[df_statFives_team1['id_playbyplaytype'] == 't3in'].shape[0]
@@ -194,6 +194,8 @@ RIVAL_POS_TEAM1 = 0.96*((RIVAL_T2IN_TEAM1+RIVAL_T2OUT_TEAM1+RIVAL_T3IN_TEAM1+RIV
 OFF_EF_TEAM1 = 100*((2*T2IN_TEAM1 + 3*T3IN_TEAM1 + T1IN_TEAM1)/POS_TEAM1)
 DEF_EF_TEAM1 = -100*((2*RIVAL_T2IN_TEAM1 + 3*RIVAL_T3IN_TEAM1 + RIVAL_T1IN_TEAM1)/RIVAL_POS_TEAM1)
 NET_EF_TEAM1 = OFF_EF_TEAM1 + DEF_EF_TEAM1
+RITMO_TEAM1 = POS_TEAM1/MINUTES_PLAYED_TEAM1*40
+MINUTES_PLAYED_TEAM1 = round(MINUTES_PLAYED_TEAM1, 0)
 
 
 # Quinteto 2
@@ -248,7 +250,7 @@ else:
 TextPlayersOut_team2 = " - ".join(str(element) for element in selected_team2_players_out)
 
 GAMES_PLAYED_TEAM2 = len(pd.unique(df_statFives_team2['id_match']))
-MINUTES_PLAYED_TEAM2 = round((df_statFives_team2['second_gameOut'].sum() - df_statFives_team2['second_gameIn'].sum()) / 60, 0)
+MINUTES_PLAYED_TEAM2 = (df_statFives_team2['second_gameOut'].sum() - df_statFives_team2['second_gameIn'].sum()) / 60
 T2IN_TEAM2 = df_statFives_team2[df_statFives_team2['id_playbyplaytype'] == 't2in'].shape[0]
 T2OUT_TEAM2 = df_statFives_team2[df_statFives_team2['id_playbyplaytype'] == 't2out'].shape[0]
 T3IN_TEAM2 = df_statFives_team2[df_statFives_team2['id_playbyplaytype'] == 't3in'].shape[0]
@@ -270,11 +272,13 @@ RIVAL_POS_TEAM2 = 0.96*((RIVAL_T2IN_TEAM2+RIVAL_T2OUT_TEAM2+RIVAL_T3IN_TEAM2+RIV
 OFF_EF_TEAM2 = 100*((2*T2IN_TEAM2 + 3*T3IN_TEAM2 + T1IN_TEAM2)/POS_TEAM2)
 DEF_EF_TEAM2 = -100*((2*RIVAL_T2IN_TEAM2 + 3*RIVAL_T3IN_TEAM2 + RIVAL_T1IN_TEAM2)/RIVAL_POS_TEAM2)
 NET_EF_TEAM2 = OFF_EF_TEAM2 + DEF_EF_TEAM2
+RITMO_TEAM2 = POS_TEAM2/MINUTES_PLAYED_TEAM2*40
+MINUTES_PLAYED_TEAM2 = round(MINUTES_PLAYED_TEAM2, 0)
 
 
-DF =  pd.DataFrame([[selected_team1, TextPlayersIn_team1, TextPlayersOut_team1, GAMES_PLAYED_TEAM1, MINUTES_PLAYED_TEAM1, OFF_EF_TEAM1, DEF_EF_TEAM1, NET_EF_TEAM1, POS_TEAM1],
-                    [selected_team2, TextPlayersIn_team2, TextPlayersOut_team2, GAMES_PLAYED_TEAM2, MINUTES_PLAYED_TEAM2, OFF_EF_TEAM2, DEF_EF_TEAM2, NET_EF_TEAM2, POS_TEAM2]],
-                    columns = ['TEAM', 'IN', 'OUT', 'PJ', 'MINS', 'OFF RATING', 'DEF RATING', 'NET RATING', 'POS'],
+DF =  pd.DataFrame([[selected_team1, TextPlayersIn_team1, TextPlayersOut_team1, GAMES_PLAYED_TEAM1, MINUTES_PLAYED_TEAM1, OFF_EF_TEAM1, DEF_EF_TEAM1, NET_EF_TEAM1, RITMO_TEAM1],
+                    [selected_team2, TextPlayersIn_team2, TextPlayersOut_team2, GAMES_PLAYED_TEAM2, MINUTES_PLAYED_TEAM2, OFF_EF_TEAM2, DEF_EF_TEAM2, NET_EF_TEAM2, RITMO_TEAM2]],
+                    columns = ['TEAM', 'IN', 'OUT', 'PJ', 'MINS', 'OFF RATING', 'DEF RATING', 'NET RATING', 'RITMO'],
                     index = ['Q1', 'Q2'])
 
 # PRINCIPAL PAGE
@@ -327,7 +331,7 @@ st.header(HEADER1)
 
 range_PJ = DF['PJ'].max()
 range_Minutos = DF['MINS'].max()
-range_Posesiones = DF['POS'].max()
+range_Ritmo = DF['RITMO'].max()
 range_Off_rating = DF['OFF RATING'].max()
 range_Def_rating = DF['DEF RATING'].min()
 range_Net_rating = DF['NET RATING'].max()
@@ -341,8 +345,8 @@ def color_Minutos(val):
     color = 'green' if val>=range_Minutos  else 'red'
     return f'color: {color}'
 
-def color_Posesiones(val):
-    color = 'green' if val>=range_Posesiones  else 'red'
+def color_Ritmo(val):
+    color = 'green' if val>=range_Ritmo  else 'red'
     return f'color: {color}'
 
 def color_Off_rating(val):
@@ -362,24 +366,24 @@ st.dataframe(DF
              .style.format({"OFF RATING": "{:.2f}".format, "DEF RATING": "{:.2f}".format, "NET RATING": "{:.2f}".format, "POS": "{:.0f}".format})
              .applymap(color_PJ, subset=['PJ'])
              .applymap(color_Minutos, subset=['MINS'])
-             .applymap(color_Posesiones, subset=['POS'])
+             .applymap(color_Ritmo, subset=['RITMO'])
              .applymap(color_Off_rating, subset=['OFF RATING'])
              .applymap(color_Def_rating, subset=['DEF RATING'])
              .applymap(color_Net_rating, subset=['NET RATING'])
             )
 
-range_Posesiones = round(range_Posesiones, 0)
+range_Ritmo = round(range_Ritmo, 0)
 range_Off_rating = round(range_Off_rating, 2)
 range_Def_rating = round(range_Def_rating, 2)
 range_Net_rating = round(range_Net_rating, 2)
 
-categories = [f'Eficiencia Ofensiva ({range_Off_rating})', f'Eficiencia Defensiva ({range_Def_rating})', f'Eficiencia Neta ({range_Net_rating})', f'Partidos Jugados ({range_PJ})', f'Minutos ({range_Minutos})', f'Posesiones ({range_Posesiones})']
+categories = [f'Eficiencia Ofensiva ({range_Off_rating})', f'Eficiencia Defensiva ({range_Def_rating})', f'Eficiencia Neta ({range_Net_rating})', f'Partidos Jugados ({range_PJ})', f'Minutos ({range_Minutos})', f'Ritmo ({range_Ritmo})']
 
 range_Net_rating = range_Net_rating +100
-ranges = [range_Off_rating, range_Def_rating, range_Net_rating, range_PJ, range_Minutos, range_Posesiones]
+ranges = [range_Off_rating, range_Def_rating, range_Net_rating, range_PJ, range_Minutos, range_Ritmo]
 
-all_averages_team1 = [OFF_EF_TEAM1, DEF_EF_TEAM1, (NET_EF_TEAM1+100), GAMES_PLAYED_TEAM1, MINUTES_PLAYED_TEAM1, POS_TEAM1]
-all_averages_team2 = [OFF_EF_TEAM2, DEF_EF_TEAM2, (NET_EF_TEAM2+100), GAMES_PLAYED_TEAM2, MINUTES_PLAYED_TEAM2, POS_TEAM2]
+all_averages_team1 = [OFF_EF_TEAM1, DEF_EF_TEAM1, (NET_EF_TEAM1+100), GAMES_PLAYED_TEAM1, MINUTES_PLAYED_TEAM1, RITMO_TEAM1]
+all_averages_team2 = [OFF_EF_TEAM2, DEF_EF_TEAM2, (NET_EF_TEAM2+100), GAMES_PLAYED_TEAM2, MINUTES_PLAYED_TEAM2, RITMO_TEAM2]
 for idx, value in enumerate(ranges):
     if idx == 0: # Offensive Rating
         if all_averages_team1[idx] > all_averages_team2[idx]:
@@ -406,6 +410,18 @@ for idx, value in enumerate(ranges):
             all_averages_team2[idx] = all_averages_team2[idx]/ranges[idx]
             #print('B2: ', all_averages_team1[idx], ' - ', all_averages_team2[idx])
     elif idx == 2: # Net Rating
+        if all_averages_team1[idx] > all_averages_team2[idx]:
+            all_averages_team1[idx] = all_averages_team1[idx]/ranges[idx]
+            all_averages_team2[idx] = (all_averages_team2[idx] - (ranges[idx]-(all_averages_team2[idx] - 15)))/ranges[idx]
+            #print('C1: ', all_averages_team1[idx], ' - ', all_averages_team2[idx])
+        elif all_averages_team1[idx] == all_averages_team2[idx]:
+            all_averages_team1[idx] = all_averages_team1[idx]/ranges[idx]
+            all_averages_team2[idx] = all_averages_team2[idx]/ranges[idx]
+        else:
+            all_averages_team1[idx] = (all_averages_team1[idx] - (ranges[idx]-(all_averages_team1[idx] - 15)))/ranges[idx]
+            all_averages_team2[idx] = all_averages_team2[idx]/ranges[idx]
+            #print('C2: ', all_averages_team1[idx], ' - ', all_averages_team2[idx])
+    elif idx == 5: # Ritmo
         if all_averages_team1[idx] > all_averages_team2[idx]:
             all_averages_team1[idx] = all_averages_team1[idx]/ranges[idx]
             all_averages_team2[idx] = (all_averages_team2[idx] - (ranges[idx]-(all_averages_team2[idx] - 15)))/ranges[idx]
@@ -458,7 +474,7 @@ if selected_team1 == selected_team2:
         date_only = date[0:10]
 
         df_game1 = df_statFives_team1[df_statFives_team1['start_date'] == date]
-        MINUTES_PLAYED_TEAM1 = round((df_game1['second_gameOut'].sum() - df_game1['second_gameIn'].sum()) / 60, 0)
+        MINUTES_PLAYED_TEAM1 = (df_game1['second_gameOut'].sum() - df_game1['second_gameIn'].sum()) / 60
         T2IN_TEAM1 = df_game1[df_game1['id_playbyplaytype'] == 't2in'].shape[0]
         T2OUT_TEAM1 = df_game1[df_game1['id_playbyplaytype'] == 't2out'].shape[0]
         T3IN_TEAM1 = df_game1[df_game1['id_playbyplaytype'] == 't3in'].shape[0]
@@ -480,10 +496,12 @@ if selected_team1 == selected_team2:
         OFF_EF_TEAM1 = 100*((2*T2IN_TEAM1 + 3*T3IN_TEAM1 + T1IN_TEAM1)/POS_TEAM1) if POS_TEAM1 > 0 else 0
         DEF_EF_TEAM1 = -100*((2*RIVAL_T2IN_TEAM1 + 3*RIVAL_T3IN_TEAM1 + RIVAL_T1IN_TEAM1)/RIVAL_POS_TEAM1) if RIVAL_POS_TEAM1 > 0 else 0
         NET_EF_TEAM1 = OFF_EF_TEAM1 + DEF_EF_TEAM1
+        RITMO_TEAM1 = POS_TEAM1/MINUTES_PLAYED_TEAM1*40
+        MINUTES_PLAYED_TEAM1 = round(MINUTES_PLAYED_TEAM1, 0)
 
         obj_team1[date_only] = {
                             'MINS': MINUTES_PLAYED_TEAM1,
-                            'POS': POS_TEAM1,
+                            'RITMO': RITMO_TEAM1,
                             'OFF RATING': OFF_EF_TEAM1,
                             'DEF RATING': DEF_EF_TEAM1,
                             'NET RATING': NET_EF_TEAM1,
@@ -491,7 +509,7 @@ if selected_team1 == selected_team2:
                            }
         
         df_game2 = df_statFives_team2[df_statFives_team2['start_date'] == date]
-        MINUTES_PLAYED_TEAM2 = round((df_game2['second_gameOut'].sum() - df_game2['second_gameIn'].sum()) / 60, 0)
+        MINUTES_PLAYED_TEAM2 = (df_game2['second_gameOut'].sum() - df_game2['second_gameIn'].sum()) / 60
         T2IN_TEAM2 = df_game2[df_game2['id_playbyplaytype'] == 't2in'].shape[0]
         T2OUT_TEAM2 = df_game2[df_game2['id_playbyplaytype'] == 't2out'].shape[0]
         T3IN_TEAM2 = df_game2[df_game2['id_playbyplaytype'] == 't3in'].shape[0]
@@ -513,10 +531,12 @@ if selected_team1 == selected_team2:
         OFF_EF_TEAM2 = 100*((2*T2IN_TEAM2 + 3*T3IN_TEAM2 + T1IN_TEAM2)/POS_TEAM2) if POS_TEAM2 > 0 else 0
         DEF_EF_TEAM2 = -100*((2*RIVAL_T2IN_TEAM2 + 3*RIVAL_T3IN_TEAM2 + RIVAL_T1IN_TEAM2)/RIVAL_POS_TEAM2) if RIVAL_POS_TEAM2 > 0 else 0
         NET_EF_TEAM2 = OFF_EF_TEAM2 + DEF_EF_TEAM2
+        RITMO_TEAM2 = POS_TEAM2/MINUTES_PLAYED_TEAM2*40
+        MINUTES_PLAYED_TEAM2 = round(MINUTES_PLAYED_TEAM2, 0)
 
         obj_team2[date_only] = {
                             'MINS': MINUTES_PLAYED_TEAM2,
-                            'POS': POS_TEAM2,
+                            'RITMO': RITMO_TEAM2,
                             'OFF RATING': OFF_EF_TEAM2,
                             'DEF RATING': DEF_EF_TEAM2,
                             'NET RATING': NET_EF_TEAM2,
