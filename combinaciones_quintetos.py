@@ -363,7 +363,7 @@ def color_Net_rating(val):
 
 
 st.dataframe(DF
-             .style.format({"OFF RATING": "{:.2f}".format, "DEF RATING": "{:.2f}".format, "NET RATING": "{:.2f}".format, "RITMO": "{:.0f}".format})
+             .style.format({"OFF RATING": "{:.2f}".format, "DEF RATING": "{:.2f}".format, "NET RATING": "{:.2f}".format, "RITMO": "{:.1f}".format})
              .applymap(color_PJ, subset=['PJ'])
              .applymap(color_Minutos, subset=['MINS'])
              .applymap(color_Ritmo, subset=['RITMO'])
