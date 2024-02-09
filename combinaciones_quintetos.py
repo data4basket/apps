@@ -363,7 +363,7 @@ def color_Net_rating(val):
 
 
 st.dataframe(DF
-             .style.format({"OFF RATING": "{:.2f}".format, "DEF RATING": "{:.2f}".format, "NET RATING": "{:.2f}".format, "POS": "{:.0f}".format})
+             .style.format({"OFF RATING": "{:.2f}".format, "DEF RATING": "{:.2f}".format, "NET RATING": "{:.2f}".format, "RITMO": "{:.0f}".format})
              .applymap(color_PJ, subset=['PJ'])
              .applymap(color_Minutos, subset=['MINS'])
              .applymap(color_Ritmo, subset=['RITMO'])
@@ -553,7 +553,7 @@ if selected_team1 == selected_team2:
     DF_teamEvoluting_2['start_date_inversed'] = DF_teamEvoluting_2['start_date'].dt.strftime('%Y-%m-%d')
     list_game_dates = list(set(DF_teamEvoluting_1['DATE'].to_list()+DF_teamEvoluting_2['DATE'].to_list()))
     list_resultsTeams = []
-    list_stat_a_visualizar = ['NET RATING', 'OFF RATING', 'DEF RATING', 'MINS', 'POS',]
+    list_stat_a_visualizar = ['NET RATING', 'OFF RATING', 'DEF RATING', 'MINS', 'RITMO',]
     selected_stat_a_visualizar = st.selectbox('Estadística a visualizar: ', list_stat_a_visualizar)
     for date in list_game_dates:
         date_inversed1 = 0    
@@ -575,7 +575,7 @@ if selected_team1 == selected_team2:
             value_team2 = 0
         list_resultsTeams.append([date, value_team1, name_quinteto1, date_inversed])
         list_resultsTeams.append([date, value_team2, name_quinteto2, date_inversed])
-    DF_teamEvoluting = pd.DataFrame(list_resultsTeams, columns = ['PARTIDOS', selected_stat_a_visualizar, 'Quintetos', 'date_inversed']).sort_values(by='PARTIDOS',ascending=True)
+    DF_teamEvoluting = pd.DataFrame(list_resultsTeams, columns = ['PARTIDOS', selected_stat_a_visualizar, 'Quintetos', 'date_inversed']).sort_values(by='date_inversed',ascending=True)
 
     fig = px.line(DF_teamEvoluting, x="PARTIDOS", y=selected_stat_a_visualizar, color='Quintetos', text=selected_stat_a_visualizar)
     fig.update_traces(textposition="bottom right")
