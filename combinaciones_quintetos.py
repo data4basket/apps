@@ -372,7 +372,7 @@ st.dataframe(DF
              .applymap(color_Net_rating, subset=['NET RATING'])
             )
 
-range_Ritmo = round(range_Ritmo, 0)
+range_Ritmo = round(range_Ritmo, 1)
 range_Off_rating = round(range_Off_rating, 2)
 range_Def_rating = round(range_Def_rating, 2)
 range_Net_rating = round(range_Net_rating, 2)
