@@ -42,7 +42,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-@st.cache
+#@st.cache
 def buscarCompeticiones(_dynamoDB):
     table = dynamoDB.Table('competition')
     obj_competitions = {}
@@ -58,7 +58,7 @@ def buscarCompeticiones(_dynamoDB):
         True
     return [obj_competitions, obj_editions]
     
-@st.cache
+#@st.cache
 def buscarJugadores(_dynamoDB, selected_liga_id):
     table = dynamoDB.Table('p_players')
     try:
@@ -75,7 +75,7 @@ def buscarJugadores(_dynamoDB, selected_liga_id):
         df_out = pd.DataFrame(list_keys_out)
     return df_out
     
-@st.cache
+#@st.cache
 def buscarEstadisticas(_dynamoDB, player, stat):
     table = dynamoDB.Table('j_playerstats')
     try:
