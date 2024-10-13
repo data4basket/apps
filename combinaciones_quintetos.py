@@ -12,7 +12,7 @@ import mysql.connector
 def conectar_BDD():
     conexion = mysql.connector.connect(user=Access_DB['DB_user'], password=Access_DB['DB_password'],
                               host=Access_DB['DB_host'],
-                              database=Access_DB['DB_database'], port=Access_DB[DB_port],
+                              database=Access_DB['DB_database'], port=Access_DB['DB_port'],
                               auth_plugin='mysql_native_password')
     cursor = conexion.cursor()
     return(conexion, cursor)
