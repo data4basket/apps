@@ -22,7 +22,7 @@ DB_host = st.secrets["DB_host"]
 DB_password = st.secrets["DB_password"]
 DB_database = st.secrets["DB_database"]
 DB_port = st.secrets["DB_port"]
-Access_DB = {'DB_user': Access_key, 'DB_host': Secret_Access_key, 'DB_password': region_name, 'DB_database': Secret_Access_key, 'DB_port': region_name}
+Access_DB = {'DB_user': DB_user, 'DB_host': DB_host, 'DB_password': DB_password, 'DB_database': DB_database, 'DB_port': DB_port}
 
 # Inject custom CSS to set the width of the sidebar
 st.markdown(
