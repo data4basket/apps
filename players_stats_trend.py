@@ -4,31 +4,23 @@ import streamlit as st
 
 import plotly.figure_factory as ff
 import plotly.express as px
-import boto3 
-from boto3.dynamodb.conditions import Key, Attr
 
+import mysql.connector
 
-def conectar_AWS(Access_WS):
-    Access_key = Access_WS['Access_key']
-    Secret_Access_key = Access_WS['Secret_Access_key']
-    region_name = Access_WS['region_name']
-    dynamodb = boto3.resource('dynamodb',aws_access_key_id=Access_key, aws_secret_access_key=Secret_Access_key, region_name=region_name)
-    return(dynamodb)
+def conectar_BDD():
+    conexion = mysql.connector.connect(user=Access_DB['DB_user'], password=Access_DB['DB_password'],
+                              host=Access_DB['DB_host'],
+                              database=Access_DB['DB_database'], port=Access_DB['DB_port'],
+                              auth_plugin='mysql_native_password')
+    cursor = conexion.cursor()
+    return(conexion, cursor)
 
-def conectar_AWS_client(Access_WS):
-    Access_key = Access_WS['Access_key']
-    Secret_Access_key = Access_WS['Secret_Access_key']
-    region_name = Access_WS['region_name']
-    dynamodb = boto3.client('dynamodb',aws_access_key_id=Access_key, aws_secret_access_key=Secret_Access_key, region_name=region_name)
-    return(dynamodb)
-
-
-Access_key = st.secrets["AWS_ACCESS_KEY_ID"] #AWS_keys['Access key ID'][0]
-Secret_Access_key = st.secrets["AWS_SECRET_ACCESS_KEY"] #AWS_keys['Secret access key'][0]
-region_name = st.secrets["AWS_DEFAULT_REGION"]
-Access_WS = {'Access_key': Access_key, 'Secret_Access_key': Secret_Access_key, 'region_name': region_name}
-
-dynamoDB = conectar_AWS(Access_WS)
+DB_user = st.secrets["DB_user"] 
+DB_host = st.secrets["DB_host"] 
+DB_password = st.secrets["DB_password"]
+DB_database = st.secrets["DB_database"]
+DB_port = st.secrets["DB_port"]
+Access_DB = {'DB_user': DB_user, 'DB_host': DB_host, 'DB_password': DB_password, 'DB_database': DB_database, 'DB_port': DB_port}
 
 # Inject custom CSS to set the width of the sidebar
 st.markdown(
@@ -42,62 +34,38 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-#@st.cache
-def buscarCompeticiones(_dynamoDB):
-    table = dynamoDB.Table('competition')
+def buscarCompeticiones():
+    [conexion, cursor] = conectar_BDD()
+    cursor.execute("SELECT id_competition, name, id_edition, year FROM competition")
+    rows = cursor.fetchall()
+    conexion.commit()
+    conexion.close()
     obj_competitions = {}
     obj_editions = {}
-    try:
-        response = table.scan(
-        )
-        items = response['Items']
-        for key in items:
-            obj_competitions[key['id_competition']] = key['name']
-            obj_editions[key['id_edition']] = key['year']
-    except:
-        True
+    for row in rows:
+        obj_competitions[row[0]] = row[1]
+        obj_editions[row[2]] = row[3]
     return [obj_competitions, obj_editions]
-    
-#@st.cache
-def buscarJugadores(_dynamoDB, selected_liga_id):
-    table = dynamoDB.Table('p_players')
-    try:
-        response = table.query(
-            IndexName="player_index",
-            KeyConditionExpression=Key("key_competition").eq(selected_liga_id),
-            )
 
-        list_keys_out = response['Items']
-        df_out = pd.DataFrame(list_keys_out)
-        df_out = df_out[['id_player', 'name']]
-    except:
-        list_keys_out = []
-        df_out = pd.DataFrame(list_keys_out)
-    return df_out
-    
-#@st.cache
-def buscarEstadisticas(_dynamoDB, player, stat):
-    table = dynamoDB.Table('j_playerstats')
-    try:
-        response = table.query(
-            IndexName="player_index",
-            KeyConditionExpression=Key("id_player").eq(player),
-            )
-
-        list_keys_out = response['Items']      
-        df_out = pd.DataFrame(list_keys_out)
-        df_out = df_out[df_out['period']==0]
-        df_out['start_date'] = pd.to_datetime(df_out['start_date'], format='%d-%m-%Y - %H:%M')
-        df_out = df_out[['start_date', stat, 'rival_team_name']].sort_values(by='start_date', ascending=True)
-        df_out[stat] = df_out[stat].astype(float)
-        if stat == 'time_played':
-            df_out[stat] = df_out[stat]/60 #df_out.stat.apply(lambda x:x/60)
-    except:
-        list_keys_out = []
-        df_out = pd.DataFrame(list_keys_out)
+def buscarJugadores(selected_liga_id):
+    [conexion, _]= conectar_BDD()
+    query = "SELECT id_player, name FROM p_players WHERE id_competition = '"+ selected_liga_id[0]+"' and id_edition = '"+selected_liga_id[1]+"'"
+    df_out = pd.read_sql(query,conexion)
+    conexion.close()
     return df_out
 
-
+def buscarEstadisticas(player, stat):
+    [conexion, _] = conectar_BDD()
+    query = "SELECT * FROM j_playerstats WHERE id_player = '" + player + "'"
+    df_out = pd.read_sql(query,conexion)
+    conexion.close()
+    df_out = df_out[df_out['period']==0]
+    df_out['start_date'] = pd.to_datetime(df_out['start_date'], format='%d-%m-%Y - %H:%M')
+    df_out = df_out[['start_date', stat, 'rival_team_name']].sort_values(by='start_date', ascending=True)
+    df_out[stat] = df_out[stat].astype(float)
+    if stat == 'time_played':
+        df_out[stat] = df_out[stat]/60 #df_out.stat.apply(lambda x:x/60)
+    return df_out
 
 # SIDEBAR
 colSide1, colSide2= st.sidebar.columns([2, 5])
@@ -121,7 +89,7 @@ stat = dict_estadisticas[selected_stat]
 
 
 col1, col2, col3 = st.sidebar. columns([5,4,6])
-[obj_competitions, obj_editions] = buscarCompeticiones(dynamoDB)
+[obj_competitions, obj_editions] = buscarCompeticiones()
 list_ligas_disponiblesName = list(set(list(obj_competitions[key] for key in obj_competitions)))
 list_years_disponiblesName = sorted(list(set(list(obj_editions[key] for key in obj_editions))), reverse=True)
 
@@ -159,27 +127,27 @@ with col2:
    st.markdown(html, unsafe_allow_html=True)
    selected_year1 = st.selectbox('Año 1', list_years_disponiblesName)
    selected_year1_id = list(obj_editions.keys())[list(obj_editions.values()).index(selected_year1)]
-   key_competition_1 = str(selected_liga1_id) + '_' + str(selected_year1_id)
+   key_competition_1 = [selected_liga1_id, selected_year1_id]
    st.markdown(html, unsafe_allow_html=True)
    selected_year2 = st.selectbox('Año 2', list_years_disponiblesName)
    selected_year2_id = list(obj_editions.keys())[list(obj_editions.values()).index(selected_year2)]
-   key_competition_2 = str(selected_liga2_id) + '_' + str(selected_year2_id)
+   key_competition_2 = [selected_liga2_id, selected_year2_id]
    st.markdown(html, unsafe_allow_html=True)
    if check_player3:
        st.markdown(html_small, unsafe_allow_html=True)
        selected_year3 = st.selectbox('Año 3', list_years_disponiblesName)
        selected_year3_id = list(obj_editions.keys())[list(obj_editions.values()).index(selected_year3)]
-       key_competition_3 = str(selected_liga3_id) + '_' + str(selected_year3_id)
+       key_competition_3 = [selected_liga3_id, selected_year3_id]
    st.markdown(html, unsafe_allow_html=True)
    if check_player4:
        st.markdown(html_small, unsafe_allow_html=True)
        selected_year4 = st.selectbox('Año 4', list_years_disponiblesName)
        selected_year4_id = list(obj_editions.keys())[list(obj_editions.values()).index(selected_year4)]
-       key_competition_4 = str(selected_liga4_id) + '_' + str(selected_year4_id)
+       key_competition_4 = [selected_liga4_id, selected_year4_id]
 
 with col3:
     st.markdown(html, unsafe_allow_html=True)
-    df_players1 = buscarJugadores(dynamoDB, key_competition_1)
+    df_players1 = buscarJugadores(key_competition_1)
     list_jugadores1 = []
     dict_players1 = {}
     for index, row in df_players1.iterrows():
@@ -190,7 +158,7 @@ with col3:
     player1 = dict_players1[selected_player1]
 
     st.markdown(html, unsafe_allow_html=True)
-    df_players2 = buscarJugadores(dynamoDB, key_competition_2)
+    df_players2 = buscarJugadores(key_competition_2)
     list_jugadores2 = []
     dict_players2 = {}
     for index, row in df_players2.iterrows():
@@ -203,7 +171,7 @@ with col3:
     st.markdown(html, unsafe_allow_html=True)
     if check_player3:
         st.markdown(html_small, unsafe_allow_html=True)
-        df_players3 = buscarJugadores(dynamoDB, key_competition_3)
+        df_players3 = buscarJugadores(key_competition_3)
         list_jugadores3 = []
         dict_players3 = {}
         for index, row in df_players3.iterrows():
@@ -216,7 +184,7 @@ with col3:
     st.markdown(html, unsafe_allow_html=True)
     if check_player4:
         st.markdown(html_small, unsafe_allow_html=True)
-        df_players4 = buscarJugadores(dynamoDB, key_competition_4)
+        df_players4 = buscarJugadores(key_competition_4)
         list_jugadores4 = []
         dict_players4 = {}
         for index, row in df_players4.iterrows():
@@ -235,7 +203,7 @@ if selected_player1:
     stringPlayer1 = str(selected_player1) + " (" + str(selected_liga1) + " " + str(selected_year1) + ")"
     list_players_selected.append(stringPlayer1)
 
-    df_results_player1 = buscarEstadisticas(dynamoDB, player1, stat)
+    df_results_player1 = buscarEstadisticas(player1, stat)
     resultsList_player1 = df_results_player1[stat].to_list() # Estadistica
     rivalesList_player1 = df_results_player1['rival_team_name'].to_list() # Rival
 
@@ -251,7 +219,7 @@ if selected_player2:
     stringPlayer2 = str(selected_player2) + " (" + str(selected_liga2) + " " + str(selected_year2) + ")"
     list_players_selected.append(stringPlayer2)
 
-    df_results_player2 = buscarEstadisticas(dynamoDB, player2, stat)
+    df_results_player2 = buscarEstadisticas(player2, stat)
     resultsList_player2 = df_results_player2[stat].to_list() # Estadistica
     rivalesList_player2 = df_results_player2['rival_team_name'].to_list() # Rival
 
@@ -267,7 +235,7 @@ if check_player3 and selected_player3:
     stringPlayer3 = str(selected_player3) + " (" + str(selected_liga3) + " " + str(selected_year3) + ")"
     list_players_selected.append(stringPlayer3)
 
-    df_results_player3 = buscarEstadisticas(dynamoDB, player3, stat)
+    df_results_player3 = buscarEstadisticas(player3, stat)
     resultsList_player3 = df_results_player3[stat].to_list() # Estadistica
     rivalesList_player3 = df_results_player3['rival_team_name'].to_list() # Rival
 
@@ -283,7 +251,7 @@ if check_player4 and selected_player4:
     stringPlayer4 = str(selected_player4) + " (" + str(selected_liga4) + " " + str(selected_year4) + ")"
     list_players_selected.append(stringPlayer4)
 
-    df_results_player4 = buscarEstadisticas(dynamoDB, player4, stat)
+    df_results_player4 = buscarEstadisticas(player4, stat)
     resultsList_player4 = df_results_player4[stat].to_list() # Estadistica
     rivalesList_player4 = df_results_player4['rival_team_name'].to_list() # Rival
 
