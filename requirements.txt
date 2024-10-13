@@ -1,6 +1,4 @@
 streamlit
 plotly
-boto3
 statsmodels
-s3fs
-st-files-connection
+mysql
