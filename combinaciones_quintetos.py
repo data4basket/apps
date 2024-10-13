@@ -5,32 +5,24 @@ import streamlit as st
 import plotly.graph_objects as go
 import plotly.express as px
 
-import boto3 
-from boto3.dynamodb.conditions import Key, Attr
+from datetime import datetime
 
+import mysql.connector
 
+def conectar_BDD():
+    conexion = mysql.connector.connect(user=Access_DB['DB_user'], password=Access_DB['DB_password'],
+                              host=Access_DB['DB_host'],
+                              database=Access_DB['DB_database'], port=Access_DB[DB_port],
+                              auth_plugin='mysql_native_password')
+    cursor = conexion.cursor()
+    return(conexion, cursor)
 
-def conectar_AWS(Access_WS):
-    Access_key = Access_WS['Access_key']
-    Secret_Access_key = Access_WS['Secret_Access_key']
-    region_name = Access_WS['region_name']
-    dynamodb = boto3.resource('dynamodb',aws_access_key_id=Access_key, aws_secret_access_key=Secret_Access_key, region_name=region_name)
-    return(dynamodb)
-
-def conectar_AWS_client(Access_WS):
-    Access_key = Access_WS['Access_key']
-    Secret_Access_key = Access_WS['Secret_Access_key']
-    region_name = Access_WS['region_name']
-    dynamodb = boto3.client('dynamodb',aws_access_key_id=Access_key, aws_secret_access_key=Secret_Access_key, region_name=region_name)
-    return(dynamodb)
-
-
-Access_key = st.secrets["AWS_ACCESS_KEY_ID"] #AWS_keys['Access key ID'][0]
-Secret_Access_key = st.secrets["AWS_SECRET_ACCESS_KEY"] #AWS_keys['Secret access key'][0]
-region_name = st.secrets["AWS_DEFAULT_REGION"]
-Access_WS = {'Access_key': Access_key, 'Secret_Access_key': Secret_Access_key, 'region_name': region_name}
-
-dynamoDB = conectar_AWS(Access_WS)
+DB_user = st.secrets["DB_user"] 
+DB_host = st.secrets["DB_host"] 
+DB_password = st.secrets["DB_password"]
+DB_database = st.secrets["DB_database"]
+DB_port = st.secrets["DB_port"]
+Access_DB = {'DB_user': Access_key, 'DB_host': Secret_Access_key, 'DB_password': region_name, 'DB_database': Secret_Access_key, 'DB_port': region_name}
 
 # Inject custom CSS to set the width of the sidebar
 st.markdown(
@@ -45,61 +37,34 @@ st.markdown(
 )
 
 @st.cache_data
-def buscarCompeticiones(_dynamoDB):
-    table = dynamoDB.Table('competition')
+def buscarCompeticiones():
+    [conexion, cursor] = conectar_BDD()
+    cursor.execute("SELECT id_competition, name, id_edition, year FROM competition")
+    rows = cursor.fetchall()
+    conexion.commit()
+    conexion.close()
     obj_competitions = {}
     obj_editions = {}
-    try:
-        response = table.scan(
-        )
-        items = response['Items']
-        for key in items:
-            obj_competitions[key['id_competition']] = key['name']
-            obj_editions[key['id_edition']] = key['year']
-    except:
-        True
+    for row in rows:
+        obj_competitions[row[0]] = row[1]
+        obj_editions[row[2]] = row[3]
     return [obj_competitions, obj_editions]
 
 @st.cache_data
-def buscarEquipos(_dynamoDB, selected_liga_id):
-    table = dynamoDB.Table('teams')
-    try:
-        response = table.query(
-                IndexName="team-index",
-            KeyConditionExpression=Key("key_competition").eq(selected_liga_id),
-            )
-
-        list_keys_out = response['Items']
-        df_out = pd.DataFrame(list_keys_out)
-        df_out = df_out[['id_team', 'team_name', 'image']]
-    except:
-        list_keys_out = []
-        df_out = pd.DataFrame(list_keys_out)
+def buscarEquipos(selected_liga_id):
+    [conexion, _]= conectar_BDD()
+    query = "SELECT id_team, team_name, image FROM teams WHERE id_competition = '"+ selected_liga_id[0]+"' and id_edition = '"+selected_liga_id[1]+"'"
+    df_out = pd.read_sql(query,conexion)
+    conexion.close()
     return df_out
 
 @st.cache_data
-def buscarStatFives(_dynamoDB, team):
-    table = dynamoDB.Table('jFives')
-#try:
-    response = table.query( KeyConditionExpression=Key('id_team').eq(team))
-    list_keys_out = response['Items']      
-    df_out = pd.DataFrame(list_keys_out)
-    if True:
-        while response.get("LastEvaluatedKey"):
-            response = table.query(
-                ExclusiveStartKey=response.get("LastEvaluatedKey"),
-                #IndexName="five_indexTeam",
-                KeyConditionExpression=Key("id_team").eq(team),     
-                #ProjectionExpression= "num_players, name_player1, name_player2, name_player3, name_player4, name_player5, name_five",
-            )
-            list_keys_out = response['Items']      
-            df_outWhile = pd.DataFrame(list_keys_out)
-            df_out = pd.concat([df_out, df_outWhile])
-       
+def buscarStatFives(team):
+    [conexion, _] = conectar_BDD()
+    query = "SELECT * FROM j_fives WHERE id_team = '" + team + "'"
+    df_out = pd.read_sql(query,conexion)
+    conexion.close()
     df_out = df_out[df_out['num_players']==5]
-#except:
-#    list_keys_out = []
-#    df_out = pd.DataFrame(list_keys_out)
     return df_out
 
 
@@ -115,7 +80,7 @@ with colSide2:
     st.markdown(htmlTittleSide, unsafe_allow_html=True)
 
 
-[obj_competitions, obj_editions] = buscarCompeticiones(dynamoDB)
+[obj_competitions, obj_editions] = buscarCompeticiones()
 list_ligas_disponiblesName = list(set(list(obj_competitions[key] for key in obj_competitions)))
 list_years_disponiblesName = sorted(list(set(list(obj_editions[key] for key in obj_editions))), reverse=True)
 list_years_disponiblesName = ['2023-24'] # Hardcodeado porque solo datos de quintetos de este año 
@@ -130,9 +95,9 @@ with col1:
 with col2:
     selected_year1 = st.selectbox('Año 1:', list_years_disponiblesName)
     selected_year1_id = list(obj_editions.keys())[list(obj_editions.values()).index(selected_year1)]
-    key_competition_1 = str(selected_liga1_id) + '_' + str(selected_year1_id)
+    key_competition_1 = [selected_liga1_id, selected_year1_id]
 
-df_teams1 = buscarEquipos(dynamoDB, key_competition_1)
+df_teams1 = buscarEquipos(key_competition_1)
 list_teams1 = []
 dict_team1 = {}
 dict_teamFoto1 = {}
@@ -145,7 +110,7 @@ selected_team1 = st.sidebar.selectbox('Equipo 1:', list_teams1)
 team1 = dict_team1[selected_team1]
 teamFoto1 = dict_teamFoto1[selected_team1]
 
-df_statFives_team1 = buscarStatFives(dynamoDB, team1)
+df_statFives_team1 = buscarStatFives(team1)
 
 team1_listNames_player1 = df_statFives_team1['name_player1'].to_list()
 team1_listNames_player2 = df_statFives_team1['name_player2'].to_list()
@@ -208,9 +173,9 @@ with col1:
 with col2:
     selected_year2 = st.selectbox('Año 2:', list_years_disponiblesName)
     selected_year2_id = list(obj_editions.keys())[list(obj_editions.values()).index(selected_year2)]
-    key_competition_2 = str(selected_liga2_id) + '_' + str(selected_year2_id)
+    key_competition_2 = [selected_liga2_id, selected_year2_id]
 
-df_teams2 = buscarEquipos(dynamoDB, key_competition_2)
+df_teams2 = buscarEquipos(key_competition_2)
 list_teams2 = []
 dict_team2 = {}
 dict_teamFoto2 = {}
@@ -223,7 +188,7 @@ selected_team2 = st.sidebar.selectbox('Equipo 2:', list_teams2)
 team2 = dict_team2[selected_team2]
 teamFoto2 = dict_teamFoto2[selected_team2]
 
-df_statFives_team2 = buscarStatFives(dynamoDB, team2)
+df_statFives_team2 = buscarStatFives(team2)
 
 team2_listNames_player1 = df_statFives_team1['name_player1'].to_list()
 team2_listNames_player2 = df_statFives_team2['name_player2'].to_list()
@@ -328,6 +293,11 @@ with colMain1_2:
 
 HEADER1 = "COMPARACIÓN"
 st.header(HEADER1)
+#df_statFives_team1['start_date_DATE'] = df_statFives_team1['start_date'].strftime("%d-%m-%Y - H:M:S") #%d-%m-%Y - H:M
+#df_statFives_team2['start_date_DATE'] = pd.to_datetime(df_statFives_team2['start_date'], format='mixed')
+min_date = datetime.strptime(min(df_statFives_team1['start_date'].to_list() + df_statFives_team2['start_date'].to_list())[:10], '%d-%m-%Y')
+max_date = datetime.strptime(max(df_statFives_team1['start_date'].to_list() + df_statFives_team2['start_date'].to_list())[:10], '%d-%m-%Y')
+start_time = st.slider( "Filtrar pot Fechas", min_date, max_date, (min_date, max_date), format="DD/MM/YY")
 
 range_PJ = DF['PJ'].max()
 range_Minutos = DF['MINS'].max()
@@ -363,7 +333,7 @@ def color_Net_rating(val):
 
 
 st.dataframe(DF
-             .style.format({"OFF RATING": "{:.2f}".format, "DEF RATING": "{:.2f}".format, "NET RATING": "{:.2f}".format, "RITMO": "{:.1f}".format})
+             .style.format({"MINS": "{:.2f}".format,"OFF RATING": "{:.2f}".format, "DEF RATING": "{:.2f}".format, "NET RATING": "{:.2f}".format, "RITMO": "{:.0f}".format})
              .applymap(color_PJ, subset=['PJ'])
              .applymap(color_Minutos, subset=['MINS'])
              .applymap(color_Ritmo, subset=['RITMO'])
@@ -555,7 +525,7 @@ if selected_team1 == selected_team2:
     list_resultsTeams = []
     list_stat_a_visualizar = ['NET RATING', 'OFF RATING', 'DEF RATING', 'MINS', 'RITMO',]
     selected_stat_a_visualizar = st.selectbox('Estadística a visualizar: ', list_stat_a_visualizar)
-    for date in list_game_dates:
+    for date in list_game_dates:  
         date_inversed1 = 0    
         DF_teamEvoluting_1alone = DF_teamEvoluting_1[DF_teamEvoluting_1['DATE'] == date].reset_index()
         if DF_teamEvoluting_1alone.shape[0] > 0:
@@ -563,6 +533,7 @@ if selected_team1 == selected_team2:
             date_inversed1 = DF_teamEvoluting_1alone['start_date_inversed'][0]
         else:
             value_team1 = 0
+        
 
         DF_teamEvoluting_2alone = DF_teamEvoluting_2[DF_teamEvoluting_2['DATE'] == date].reset_index()
         if DF_teamEvoluting_2alone.shape[0] > 0:
