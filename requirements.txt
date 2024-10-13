@@ -1,4 +1,4 @@
 streamlit
 plotly
 statsmodels
-mysql.connector
+mysql.connector.python
