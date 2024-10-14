@@ -83,7 +83,7 @@ with colSide2:
 [obj_competitions, obj_editions] = buscarCompeticiones()
 list_ligas_disponiblesName = list(set(list(obj_competitions[key] for key in obj_competitions)))
 list_years_disponiblesName = sorted(list(set(list(obj_editions[key] for key in obj_editions))), reverse=True)
-list_years_disponiblesName = ['2024-25'] # Hardcodeado porque solo datos de quintetos de este año 
+#list_years_disponiblesName = ['2024-25'] # Hardcodeado porque solo datos de quintetos de este año 
 
 # Quinteto 1
 st.sidebar.title('Quinteto 1:')
