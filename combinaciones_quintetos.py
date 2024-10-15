@@ -36,7 +36,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-@st.cache_data
+#@st.cache_data
 def buscarCompeticiones():
     [conexion, cursor] = conectar_BDD()
     cursor.execute("SELECT id_competition, name, id_edition, year FROM competition")
@@ -50,7 +50,7 @@ def buscarCompeticiones():
         obj_editions[row[2]] = row[3]
     return [obj_competitions, obj_editions]
 
-@st.cache_data
+#@st.cache_data
 def buscarEquipos(selected_liga_id):
     [conexion, _]= conectar_BDD()
     query = "SELECT id_team, team_name, image FROM teams WHERE id_competition = '"+ selected_liga_id[0]+"' and id_edition = '"+selected_liga_id[1]+"'"
@@ -58,7 +58,7 @@ def buscarEquipos(selected_liga_id):
     conexion.close()
     return df_out
 
-@st.cache_data
+#@st.cache_data
 def buscarStatFives(team):
     [conexion, _] = conectar_BDD()
     query = "SELECT * FROM j_fives WHERE id_team = '" + team + "'"
