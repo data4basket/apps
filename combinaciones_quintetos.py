@@ -60,7 +60,7 @@ class ComplexRadar():
                                          labels=variables,
                                          fontsize=14,
                                          rotation=angles[1],#-90,
-                                         color='black'
+                                         color='purple'
                                          )
 
         [txt.set_position((-0.05, -0.05)) for txt, angle in zip(text, angles)]
