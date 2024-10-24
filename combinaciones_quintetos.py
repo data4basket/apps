@@ -60,7 +60,7 @@ class ComplexRadar():
                                          labels=variables,
                                          fontsize=14,
                                          rotation=angles[1],#-90,
-                                         color='purple'
+                                         color='black'
                                          )
 
         [txt.set_position((-0.05, -0.05)) for txt, angle in zip(text, angles)]
@@ -74,11 +74,6 @@ class ComplexRadar():
                                num=n_ordinate_levels)
             gridlabel = ["{}".format(round(x, 2))
                          for x in grid]
-            '''
-            if ranges[i][0] > ranges[i][1]:
-                grid = grid[::-1]  # hack to invert grid
-                # gridlabels aren't reversed
-            '''
             for gL in range(len(gridlabel)):
                 if (gL != len(gridlabel)-1):
                     gridlabel[gL] = ""  # clean up origin
@@ -126,6 +121,9 @@ def conectar_BDD():
 st.markdown(
     """
     <style>
+        .stJson{
+            display: none !important;
+        }
         .stMainBlockContainer {
             max-width: 70rem !important;
             padding: 1rem 1rem 10rem !important;
