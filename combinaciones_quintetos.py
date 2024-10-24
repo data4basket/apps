@@ -18,21 +18,16 @@ Access_DB = {'DB_user': DB_user, 'DB_host': DB_host, 'DB_password': DB_password,
 ##############################################################################################################################################
 
 def _invert(x, limits):
-    """inverts a value x on a scale from
-    limits[0] to limits[1]"""
+    #inverts a value x on a scale from
+    #limits[0] to limits[1]
     return limits[1] - (x - limits[0])
 
 
 def _scale_data(data, ranges):
-    """scales data[1:] to ranges[0],
-    inverts if the scale is reversed"""
+    #scales data[1:] to ranges[0],
+    #inverts if the scale is reversed
     for d, (y1, y2) in zip(data[1:], ranges[1:]):
         assert (y1 <= d <= y2) or (y2 <= d <= y1)
-    """
-    for r in ranges:
-        x1, x2 = r
-        if x1 != x2:
-            break """
     x1, x2 = ranges[0]
     d = data[0]
     if x1 > x2:
