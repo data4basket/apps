@@ -1,6 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns  # improves plot aesthetics
 
 
 def _invert(x, limits):
