@@ -7,7 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from datetime import date
 
-from Scripts_auxiliares/radarChart import *
+from radarChart import *
 
 DB_user = st.secrets["DB_user"] 
 DB_host = st.secrets["DB_host"] 
