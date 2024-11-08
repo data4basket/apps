@@ -2,30 +2,14 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 
-import mysql.connector
 import numpy as np
 import matplotlib.pyplot as plt
-from datetime import date
 
-from radarChart import *
+from crear_visualizacion import *
+from main_stats_generar import *
+from conexiones_bbdd import *
+from main_graphics_creations import *
 
-DB_user = st.secrets["DB_user"] 
-DB_host = st.secrets["DB_host"] 
-DB_password = st.secrets["DB_password"]
-DB_database = st.secrets["DB_database"]
-DB_port = st.secrets["DB_port"]
-Access_DB = {'DB_user': DB_user, 'DB_host': DB_host, 'DB_password': DB_password, 'DB_database': DB_database, 'DB_port': DB_port}
-
-
-
-#@st.cache_resource
-def conectar_BDD():
-    conexion = mysql.connector.connect(user=Access_DB['DB_user'], password=Access_DB['DB_password'],
-                              host=Access_DB['DB_host'],
-                              database=Access_DB['DB_database'], port=Access_DB['DB_port'],
-                              auth_plugin='mysql_native_password')
-    cursor = conexion.cursor()
-    return(conexion, cursor)
 
 
 # Inject custom CSS to set the width of the sidebar
@@ -52,50 +36,6 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
-
-
-@st.cache_data
-def buscarCompeticiones():
-    [conexion, _]= conectar_BDD()
-    query = "SELECT id_competition, name, id_edition, year FROM competition ORDER BY year DESC"
-    df_out = pd.read_sql(query,conexion).drop_duplicates()
-    conexion.close()
-    return df_out
-
-@st.cache_data
-def buscarEquipos(selected_liga_id, selected_year_id):
-    [conexion, _]= conectar_BDD()
-    query = "SELECT id_team, team_name, image FROM teams WHERE id_competition = '"+ selected_liga_id+"' and id_edition = '"+selected_year_id+"'"
-    df_out = pd.read_sql(query,conexion)
-    conexion.close()
-    return df_out
-
-@st.cache_data
-def buscarJugadores(id_team):
-    [conexion, _]= conectar_BDD()
-    query = "SELECT id_player, name_nick, image FROM p_players WHERE id_team = '" + id_team + "'"
-    df_out = pd.read_sql(query,conexion)
-    conexion.close()
-    return df_out
-
-@st.cache_data
-def buscarStatFives(id_team, list_players_in, list_player_out, RANGO_FECHAS):
-    SQL_PLAYERS_IN = ""
-    for player in list_players_in:
-        SQL_PLAYERS_IN = SQL_PLAYERS_IN + "AND name_five like '%" + player + "%'"
-    SQL_PLAYERS_OUT = ""
-    for player in list_player_out:
-        SQL_PLAYERS_OUT = SQL_PLAYERS_OUT + "AND name_five not like '%" + player + "%'"
-        
-    [conexion, _] = conectar_BDD()
-    SQL_RANGO_FECHAS = ""
-    query = "SELECT * FROM j_fives WHERE num_players = 5 AND id_team = '" + id_team + "' " + SQL_PLAYERS_IN + SQL_PLAYERS_OUT
-    df_out = pd.read_sql(query,conexion)
-    df_out['start_date']= pd.to_datetime(df_out['start_date'])
-    df_out = df_out[(df_out['start_date'] >= RANGO_FECHAS[0]) & (df_out['start_date'] <= RANGO_FECHAS[1])]
-    conexion.close()
-    return df_out
-
 
 
 # SIDEBAR
@@ -197,93 +137,13 @@ def PROCESAR():
     list_fives_df = []
     list_index_fives_df = []
     for j in range(selected_number_quintetos):
-        df_statFives_team = buscarStatFives(LIST_QUINTETOS_TODOS[j]['id_team'], LIST_QUINTETOS_TODOS[j]['players_IN'], LIST_QUINTETOS_TODOS[j]['players_OUT'], RANGO_FECHAS)
+        df_statFives_team = buscarStatFives(LIST_QUINTETOS_TODOS[j]['id_team'], LIST_QUINTETOS_TODOS[j]['players_IN'], LIST_QUINTETOS_TODOS[j]['players_OUT'])
 
         TextPlayersIn_team1 = " - ".join(str(element) for element in LIST_QUINTETOS_TODOS[j]['players_IN'])
         TextPlayersOut_team1 = " - ".join(str(element) for element in LIST_QUINTETOS_TODOS[j]['players_OUT'])
 
-        PJ = len(pd.unique(df_statFives_team['id_match']))
-        MIN = (df_statFives_team['second_gameOut'].sum() - df_statFives_team['second_gameIn'].sum()) / 60
-        T2A = df_statFives_team[df_statFives_team['id_playbyplaytype'] == 't2in'].shape[0]
-        T2O = df_statFives_team[df_statFives_team['id_playbyplaytype'] == 't2out'].shape[0]
-        T3A = df_statFives_team[df_statFives_team['id_playbyplaytype'] == 't3in'].shape[0]
-        T3O= df_statFives_team[df_statFives_team['id_playbyplaytype'] == 't3out'].shape[0]
-        TLA = df_statFives_team[df_statFives_team['id_playbyplaytype'] == 't1in'].shape[0]
-        TLO = df_statFives_team[df_statFives_team['id_playbyplaytype'] == 't1out'].shape[0]
-        AST = df_statFives_team[df_statFives_team['id_playbyplaytype'] == 'ast'].shape[0]
-        REC = df_statFives_team[df_statFives_team['id_playbyplaytype'] == 'stl'].shape[0]
-        PER = df_statFives_team[df_statFives_team['id_playbyplaytype'] == 'turn'].shape[0]
-        RD = df_statFives_team[df_statFives_team['id_playbyplaytype'] == 'rebD'].shape[0]
-        RO = df_statFives_team[df_statFives_team['id_playbyplaytype'] == 'rebO'].shape[0]
-        TF = df_statFives_team[df_statFives_team['id_playbyplaytype'] == 'block'].shape[0]
-        TC = df_statFives_team[df_statFives_team['id_playbyplaytype'] == 'blockAgainst'].shape[0]
-        FC = df_statFives_team[df_statFives_team['id_playbyplaytype'] == 'foul'].shape[0]
-        FR = df_statFives_team[df_statFives_team['id_playbyplaytype'] == 'foulR'].shape[0]
-        r_T2A = df_statFives_team[df_statFives_team['id_playbyplaytype'] == 'r_t2in'].shape[0]
-        r_T2O = df_statFives_team[df_statFives_team['id_playbyplaytype'] == 'r_t2out'].shape[0]
-        r_T3A = df_statFives_team[df_statFives_team['id_playbyplaytype'] == 'r_t3in'].shape[0]
-        r_T3O= df_statFives_team[df_statFives_team['id_playbyplaytype'] == 'r_t3out'].shape[0]
-        r_TLA = df_statFives_team[df_statFives_team['id_playbyplaytype'] == 'r_t1in'].shape[0]
-        r_TLO = df_statFives_team[df_statFives_team['id_playbyplaytype'] == 'r_t1out'].shape[0]
-        r_AST = df_statFives_team[df_statFives_team['id_playbyplaytype'] == 'r_ast'].shape[0]
-        r_REC = df_statFives_team[df_statFives_team['id_playbyplaytype'] == 'r_stl'].shape[0]
-        r_PER = df_statFives_team[df_statFives_team['id_playbyplaytype'] == 'r_turn'].shape[0]
-        r_RD = df_statFives_team[df_statFives_team['id_playbyplaytype'] == 'r_rebD'].shape[0]
-        r_RO = df_statFives_team[df_statFives_team['id_playbyplaytype'] == 'r_rebO'].shape[0]
-        r_TF = df_statFives_team[df_statFives_team['id_playbyplaytype'] == 'r_block'].shape[0]
-        r_TC = df_statFives_team[df_statFives_team['id_playbyplaytype'] == 'r_blockAgainst'].shape[0]
-        r_FC = df_statFives_team[df_statFives_team['id_playbyplaytype'] == 'r_foul'].shape[0]
-        r_FR = df_statFives_team[df_statFives_team['id_playbyplaytype'] == 'r_foulR'].shape[0]
-        PTS = 2*T2A + 3*T3A + TLA
-        r_PTS = 2*r_T2A + 3*r_T3A + r_TLA
-        T2I = T2A + T2O
-        r_T2I = r_T2A + r_T2O
-        T2_PORC = round(T2A/T2I,2) if T2I > 0 else 0
-        r_T2_PORC = round(r_T2A/r_T2I,2) if r_T2I > 0 else 0
-        T3I = T3A + T3O
-        r_T3I = r_T3A + r_T3O
-        T3_PORC = round(T3A/T3I,2) if T3I > 0 else 0
-        r_T3_PORC = round(r_T3A/r_T3I,2) if T3I > 0 else 0
-        TLI = TLA + TLO
-        r_TLI = r_TLA + r_TLO
-        TL_PORC = round(TLA/TLI,2) if TLI > 0 else 0
-        r_TL_PORC = round(r_TLA/r_TLI,2) if r_TLI > 0 else 0
-        RT = RD +RO
-        r_RT = r_RD +r_RO
-        VAL = PTS - T2O - T3O - TLO + RT + AST + REC - PER + TF - TC + FR -FC
-        r_VAL = r_PTS - r_T2O - r_T3O - r_TLO + r_RT + r_AST + r_REC - r_PER + r_TF - r_TC + r_FR - r_FC
-        DIF_PTS = PTS - r_PTS
-        POSESIONES = 0.96*((T2A+T2O+T3A+T3O) + PER + 0.44*(TLA+TLO-RO))
-        r_POSESIONES = 0.96*((r_T2A+r_T2O+r_T3A+r_T3O) + r_PER + 0.44*(r_TLA+r_TLO-r_RO))
-        OFF_EF = 100*((PTS)/POSESIONES) if POSESIONES > 0 else 0
-        DEF_EF = -100*((r_PTS)/r_POSESIONES) if r_POSESIONES > 0 else 0
-        NET_EF = OFF_EF + DEF_EF
-        RITMO = POSESIONES/float(MIN)*40 if MIN>0 else 0
-
-        PTS_TIRO = PTS / (T2I + T3I) if (T2I + T3I) > 0 else 0
-        r_PTS_TIRO = r_PTS / (r_T2I + r_T3I) if (r_T2I + r_T3I) > 0 else 0
-        PTS_POS = PTS / POSESIONES if POSESIONES > 0 else 0
-        r_PTS_POS = r_PTS / r_POSESIONES if r_POSESIONES > 0 else 0
-        EFG = 100*((T2A + T3A) + 0.5*T3A)/(T2I + T3I) if (T2I + T3I) > 0 else 0
-        r_EFG = 100*((r_T2A + r_T3A) + 0.5*r_T3A)/(r_T2I + r_T3I) if (r_T2I + r_T3I) > 0 else 0
-        REBO_P = 100*RO / (RO + r_RD) if (RO + r_RD) > 0 else 0
-        REBD_P = 100*RD / (RD + r_RO) if (RD + r_RO) > 0 else 0
-        REB_P = 100*(RO+RD) / (RO+RD+r_RO+r_RD) if (RO+RD+r_RO+r_RD) > 0 else 0
-        AST_P = 100*AST / POSESIONES if POSESIONES > 0 else 0
-        r_AST_P = 100*r_AST / r_POSESIONES if r_POSESIONES > 0 else 0
-        REC_P = 100*REC / r_POSESIONES if r_POSESIONES > 0 else 0
-        TAP_P = 100*TF / r_POSESIONES if r_POSESIONES > 0 else 0
-        PERD_P = 100*PER / POSESIONES if POSESIONES > 0 else 0
-        r_PERD_P = 100*r_PER / r_POSESIONES if r_POSESIONES > 0 else 0
-        AST_PERD =AST / PER if PER >0 else 0
-        r_AST_PERD =r_AST / r_PER if r_PER >0 else 0
-        FREC_TL = 100*TLI / (T2I + T3I) if (T2I + T3I) > 0 else 0
-        r_FREC_TL = 100*r_TLI / (r_T2I + r_T3I) if (r_T2I + r_T3I) > 0 else 0
-        PLAY_P = 100*(T2A + T3A)/(T2I+T3I+RO+PER) if (T2I+T3I+RO+PER) > 0 else 0
-        r_PLAY_P = 100*(r_T2A + r_T3A)/(r_T2I+r_T3I+r_RO+r_PER) if (r_T2I+r_T3I+r_RO+r_PER) > 0 else 0
-            
-        POSESIONES = int(POSESIONES)
-        r_POSESIONES = int(r_POSESIONES)
+        list_five_out = []
+        list_five_out = crearBucleFor_teams_fromEvents(df_statFives_team, list_selected_stats, list_five_out, modo_metricas, list_stats_a40mins)[0]
 
         players_in_string = ''
         for p_in in range(len(LIST_QUINTETOS_TODOS[j]['players_IN'])):
@@ -298,30 +158,23 @@ def PROCESAR():
             else:
                 players_out_string = players_out_string + " + " + LIST_QUINTETOS_TODOS[j]['players_OUT'][p_out]
 
-        obj_variableValue_to_stats = {
-                    "PJ":PJ, "MIN":MIN, "Nº POS":POSESIONES, "PTS":PTS, "T2A":T2A, "T2I":T2I, "%T2":T2_PORC, "T3A":T3A, "T3I":T3I, "%T3":T3_PORC, "TLA":TLA, "TLI":TLI, "%TL":TL_PORC, "RD":RD, "RO":RO,"RT":RT, "AST":AST, "REC":REC, "PERD":PER, "TF":TF, "TC":TC, "FC":FC, "FR":FR, "VAL":VAL, "+-": DIF_PTS,
-                    "PTS/TIRO": PTS_TIRO, "PTS/POS": PTS_POS,"%EFG": EFG, "EF.OF": OFF_EF, "%REB.OF": REBO_P, "%AST": AST_P, "%PERD": PERD_P, "AST/PERD": AST_PERD, "FREC.TL": FREC_TL, "%PLAY": PLAY_P,
-                    "Nº POS rival": r_POSESIONES, "PTS rival": r_PTS,"RT rival": r_RT, "AST rival": r_AST, "REC rival": r_REC, "PERD rival": r_PER, "VAL rival": r_VAL,
-                    "PTS/POS rival": r_PTS_POS,"%EFG rival": r_EFG, "EF.DEF": DEF_EF, "%REB.DEF": REBD_P, "%AST rival": r_AST_P, "%PERD rival": r_PERD_P, "AST/PERD rival": r_AST_PERD, "FREC.TL rival": r_FREC_TL, "%PLAY rival": r_PLAY_P, "%REC": REC_P, "%TAP": TAP_P, "RITMO": RITMO, "EF.NETA": NET_EF, "%REB": REB_P,
-                    "EQUIPO": LIST_QUINTETOS_TODOS[j]["team_name"]+" "+LIST_QUINTETOS_TODOS[j]["year"][2:], "JUG. IN": players_in_string, "JUG. OUT": players_out_string
-                }
-
-        list_five_out = []
-        for stat in list_selected_stats:
-            statValue = obj_variableValue_to_stats[stat]
-            if (modo_metricas != 'Totales') and (stat in list_stats_a40mins):
-                statValue = round(statValue/MIN*40 if MIN>0 else 0, 1)
-            list_five_out.append(statValue)
+        list_five_out.insert(0, players_out_string)
+        list_five_out.insert(0, players_in_string)
+        list_five_out.insert(0, LIST_QUINTETOS_TODOS[j]["team_name"]+" "+LIST_QUINTETOS_TODOS[j]["year"][2:])
 
         list_fives_df.append(list_five_out)
         list_index_fives_df.append('Quinteto ' + str(j+1))
 
 
+    list_selected_stats.insert(0, "JUG. OUT")
+    list_selected_stats.insert(0, "JUG. IN")
+    list_selected_stats.insert(0, "EQUIPO")
 
     DF =  pd.DataFrame(list_fives_df,
                         columns = list_selected_stats,
                         index = list_index_fives_df)
     
+
     st.session_state.procesado = True
     st.session_state.results = DF.transpose()
 
@@ -365,7 +218,6 @@ with colMain1:
                         )
     list_posible_stats = obj_type_stats[selected_type_stats]  
 
-
 with colMain2:
     if selected_type_stats != "***Personalizadas*** :movie_camera:": 
         list_selected_stats = st.multiselect(
@@ -386,9 +238,6 @@ with colMain2:
                                     disabled=False
                                 )
     st.session_state.list_selected_stats = list_selected_stats.copy()
-    list_selected_stats.insert(0, "JUG. OUT")
-    list_selected_stats.insert(0, "JUG. IN")
-    list_selected_stats.insert(0, "EQUIPO")
 
     modo_metricas = st.radio("***MODO MÉTRICAS***",
                                               options=[
@@ -396,15 +245,6 @@ with colMain2:
                                                         "A 40 minutos de juego (por partido)"
                                                     ])
 
-RANGO_FECHAS = st.slider(
-    "FILTRAR POR PARTIDOS ENTRE FECHAS",
-    min_value = date(2022, 9,1), max_value  = date.today(),
-    value=(date(2022, 9,1), date.today()),
-    format="DD/MM/YY"
-)
-
-
-RANGO_FECHAS = [pd.Timestamp(RANGO_FECHAS[0]), pd.Timestamp(RANGO_FECHAS[1])]
 st.text("")
 
 colMainB1, colMainB2, colMainB3= st.columns([2, 8, 2])
