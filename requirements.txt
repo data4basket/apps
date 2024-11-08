@@ -4,3 +4,4 @@ statsmodels
 matplotlib
 mysql.connector.python
 sqlalchemy
+torch
