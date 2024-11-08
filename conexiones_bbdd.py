@@ -7,12 +7,12 @@ import streamlit as st
 
 
 
-DB_user = 'uzfuvo3wnw2qsqgd'#st.secrets["DB_user"] 
-DB_host = 'beostcahrwcz9dae7kmf-mysql.services.clever-cloud.com'#st.secrets["DB_host"] 
-DB_password = '8g8ndC072WJBeIfwpTzm'#st.secrets["DB_password"]
-DB_database = 'beostcahrwcz9dae7kmf'#st.secrets["DB_database"]
-DB_port = 20228#st.secrets["DB_port"]
-DB_URI = "mysql+pymysql://uzfuvo3wnw2qsqgd:8g8ndC072WJBeIfwpTzm@beostcahrwcz9dae7kmf-mysql.services.clever-cloud.com:20228/beostcahrwcz9dae7kmf"
+DB_user = st.secrets["DB_user"] 
+DB_host = st.secrets["DB_host"] 
+DB_password = st.secrets["DB_password"]
+DB_database = st.secrets["DB_database"]
+DB_port = st.secrets["DB_port"]
+DB_URI = "mysql+pymysql://uzfuvo3wnw2qsqgd:8g8ndC072WJBeIfwpTzm@beostcahrwcz9dae7kmf-mysql.services.clever-cloud.com:20228/beostcahrwcz9dae7kmf"#st.secrets["DB_URI"] 
 Access_DB = {'DB_user': DB_user, 'DB_host': DB_host, 'DB_password': DB_password, 'DB_database': DB_database, 'DB_port': DB_port, 'DB_URI': DB_URI}
 
 
